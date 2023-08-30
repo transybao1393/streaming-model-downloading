@@ -2,15 +2,16 @@ import requests
 import logging
 import threading
 from tqdm import tqdm
+from io import BytesIO
 
 URL = "https://instagram.com/favicon.ico"
 WEIGHTS_URL = "https://github.com/AlexeyAB/darknet/releases/download/yolov4/yolov7-tiny.weights"
 CFG_URL = "https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov7-tiny.cfg"
 
 def download_file():
+
     # start threading
     weights = threading.Thread(target = download, args=(WEIGHTS_URL, "yolov7-tiny.weights",))
-    
     cfg = threading.Thread(target = download, args=(CFG_URL, "yolov7-tiny.cfg",))
     cfg.start()
     weights.start()
@@ -45,6 +46,7 @@ def download(url: str, fname: str):
         with requests.get(url, stream=True) as r:
             total = int(r.headers.get('content-length', 0))
             # Can also replace 'file' with a io.BytesIO object
+            # write to file
             with open(fname, 'wb') as file, tqdm(
                 desc=fname,
                 total=total,
@@ -55,6 +57,18 @@ def download(url: str, fname: str):
                 for data in r.iter_content(chunk_size=1024):
                     size = file.write(data)
                     bar.update(size)
+
+            # write to buffer in memory
+            # with BytesIO() as buffer, tqdm(
+            #     desc=fname,
+            #     total=total,
+            #     unit='iB',
+            #     unit_scale=True,
+            #     unit_divisor=1024,
+            # ) as bar:
+            #     for data in r.iter_content(chunk_size=1024):
+            #         size = buffer.write(data)
+            #         bar.update(size)
     except requests.exceptions.ConnectionError as ce:
         print("ConnectionError with message: ", ce)
     except requests.exceptions.FileModeWarning as fm:
